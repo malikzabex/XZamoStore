@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>XZamo Store</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --text-color: #ffffff;
+            --accent-color: #007bff;
+            --danger-color: #ff4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; outline: none; }
+        
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            overflow-x: hidden; 
+            max-width: 900px; 
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        /* Loading Screen */
+        #loading-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--accent-color); z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+            flex-direction: column; transition: opacity 0.5s;
+        }
+
+        .hidden { display: none !important; }
+        .screen { padding: 10px; padding-bottom: 80px; min-height: 100vh; width: 100%; }
+        
+        input, select, textarea {
+            width: 100%; padding: 10px; margin: 5px 0;
+            background: #333; border: 1px solid #444; color: white; border-radius: 8px;
+        }
+        button {
+            width: 100%; padding: 12px; margin: 10px 0; border: none;
+            border-radius: 8px; cursor: pointer; font-weight: bold;
+            background: var(--accent-color); color: white;
+        }
+        button.secondary { background: #555; }
+        
+        /* Navbar */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: var(--card-bg); display: flex; justify-content: space-around;
+            padding: 12px; border-top: 1px solid #444; z-index: 1000;
+        }
+        .nav-item { color: #888; font-size: 1.2rem; cursor: pointer; }
+        .nav-item.active { color: var(--accent-color); }
+
+        /* Home Header */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 5px; }
+
+        /* BANNER SLIDER (Right Side Auto Slide) */
+        .banner-container { 
+            width: 100%; 
+            height: 160px; 
+            overflow: hidden; 
+            border-radius: 10px; 
+            margin-bottom: 15px; 
+            position: relative;
+            background: #222;
+        }
+        .banner-slide { 
+            display: flex; 
+            height: 100%; 
+            transition: transform 0.5s ease-in-out; 
+            width: 100%;
+        }
+        .banner-img { 
+            min-width: 100%; 
+            width: 100%;
+            height: 100%; 
+            object-fit: cover;
+            display: block; 
+        }
+        
+        /* 3 PRODUCTS PER ROW */
+        .product-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 8px; 
+        }
+        .product-card { 
+            background: var(--card-bg); 
+            padding: 8px; 
+            border-radius: 8px; 
+            position: relative; 
+            overflow: hidden;
+        }
+        .product-card img { 
+            width: 100%; height: 90px; object-fit: cover; border-radius: 6px; 
+        }
+        .product-title { 
+            font-size: 0.75rem; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+        }
+        .product-price { color: #4caf50; font-weight: bold; font-size: 0.8rem; }
+        .fav-icon { 
+            position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); 
+            padding: 4px; border-radius: 50%; font-size: 0.8rem; cursor: pointer; 
+        }
+        .fav-icon.active { color: red; }
+
+        .notif-badge { background: red; color: white; border-radius: 50%; padding: 2px 5px; font-size: 0.6rem; position: absolute; top: -5px; right: -5px; }
+
+        /* Chat System */
+        .chat-window { height: calc(100vh - 150px); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 10px; padding-bottom: 20px; }
+        .message { max-width: 75%; padding: 10px; border-radius: 10px; word-wrap: break-word; font-size: 0.9rem; }
+        .msg-sent { align-self: flex-end; background: var(--accent-color); color: white; border-bottom-right-radius: 0; }
+        .msg-received { align-self: flex-start; background: #444; color: white; border-bottom-left-radius: 0; }
+        
+        .chat-input-area { 
+            position: fixed; bottom: 0; left: 0; width: 100%; background: #222; 
+            padding: 8px; display: flex; gap: 8px; align-items: center; z-index: 2000;
+        }
+        .inbox-item { background: #333; padding: 12px; margin-bottom: 8px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+
+    </style>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <h1 style="color:white; font-size: 2rem;">XZamo Store</h1>
+        <p>Loading...</p>
+    </div>
+
+    <!-- Auth -->
+    <div id="auth-screens">
+        <div id="signup-screen" class="screen">
+            <h2 style="text-align:center; margin-top: 50px;">Sign Up</h2>
+            <input type="text" id="su-name" placeholder="Full Name">
+            <input type="email" id="su-email" placeholder="Email">
+            <input type="password" id="su-pass" placeholder="Password">
+            <select id="su-country"><option value="">Select Country</option></select>
+            <input type="date" id="su-dob">
+            <button onclick="handleSignup()">Create Account</button>
+            <p onclick="showLogin()" style="text-align:center; color:#888; margin-top:20px;">Already have an account? Login</p>
+        </div>
+        <div id="login-screen" class="screen hidden">
+            <h2 style="text-align:center; margin-top: 50px;">Login</h2>
+            <input type="email" id="li-email" placeholder="Email">
+            <input type="password" id="li-pass" placeholder="Password">
+            <button onclick="handleLogin()">Login</button>
+            <p onclick="showSignup()" style="text-align:center; color:#888; margin-top:20px;">New User? Sign Up</p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-container" class="hidden">
+        
+        <!-- Home -->
+        <div id="home-screen" class="screen">
+            <div class="header">
+                <h3>XZamo Store</h3>
+                <div style="position: relative;" onclick="toggleNotifPanel()">
+                    <i class="fas fa-bell" style="font-size: 1.4rem;"></i>
+                    <span id="notif-badge" class="hidden notif-badge">!</span>
+                </div>
+            </div>
+
+            <!-- Notifications (In App) -->
+            <div id="notif-panel" class="hidden" style="background: #252525; padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+                <small style="color:#aaa;">Recent Notifications</small>
+                <div id="notif-list"></div>
+            </div>
+
+            <input type="text" id="search-bar" placeholder="Search..." onkeyup="searchProducts()" style="margin-bottom: 15px;">
+
+            <!-- BANNER SLIDER -->
+            <div class="banner-container">
+                <div class="banner-slide" id="banner-wrapper"></div>
+            </div>
+
+            <h4 style="margin-bottom: 10px;">Products</h4>
+            <div class="product-grid" id="product-list"></div>
+        </div>
+
+        <!-- Product Details -->
+        <div id="product-detail-screen" class="screen hidden">
+            <button onclick="goBack()" class="secondary" style="width: auto; margin-bottom: 10px;"><i class="fas fa-arrow-left"></i></button>
+            <div id="p-detail-content"></div>
+        </div>
+
+        <!-- Upload -->
+        <div id="upload-screen" class="screen hidden">
+            <h2>Sell Product</h2>
+            <input type="text" id="up-title" placeholder="Title">
+            <textarea id="up-desc" placeholder="Description" rows="3"></textarea>
+            <input type="text" id="up-img" placeholder="Image URL">
+            <input type="number" id="up-price" placeholder="Price (RS)">
+            <select id="up-condition"><option value="New">New</option><option value="Used">Used</option></select>
+            <input type="text" id="up-brand" placeholder="Brand">
+            <input type="text" id="up-color" placeholder="Color">
+            <input type="text" id="up-size" placeholder="Size">
+            <button onclick="uploadProduct()">Upload</button>
+            <hr style="border-color: #444; margin: 15px 0;">
+            <h3>My Products</h3>
+            <div id="my-products-list"></div>
+        </div>
+
+        <!-- Favorites -->
+        <div id="fav-screen" class="screen hidden">
+            <h2>Favorites</h2>
+            <div class="product-grid" id="fav-list"></div>
+        </div>
+
+        <!-- Inbox -->
+        <div id="inbox-screen" class="screen hidden">
+            <h2>Messages</h2>
+            <div id="inbox-list" style="margin-top: 15px;"></div>
+        </div>
+
+        <!-- Chat Screen -->
+        <div id="chat-screen" class="screen hidden" style="padding: 0; padding-bottom: 60px;">
+            <div style="background: #222; padding: 15px; display:flex; align-items:center; gap:10px; border-bottom: 1px solid #333;">
+                <i class="fas fa-arrow-left" onclick="closeChat()" style="font-size:1.2rem;"></i>
+                <h3 id="chat-header-name" style="margin:0;">User</h3>
+            </div>
+            
+            <div id="chat-messages" class="chat-window"></div>
+            
+            <!-- Image Preview -->
+            <div id="chat-img-prev-container" style="position:fixed; bottom: 60px; left: 10px; display:none;">
+                <img id="chat-img-preview-el" style="max-width: 150px; border: 2px solid var(--accent-color); border-radius: 8px;">
+                <i class="fas fa-times-circle" style="color:red; font-size:1.5rem; position: absolute; top:-5px; right:-5px; background:white; border-radius:50%; cursor:pointer;" onclick="clearChatImage()"></i>
+            </div>
+
+            <div class="chat-input-area">
+                <label for="chat-file-input" style="color:white; margin:0 10px; cursor:pointer;"><i class="fas fa-image fa-lg"></i></label>
+                <input type="file" id="chat-file-input" accept="image/*" style="display:none;" onchange="handleChatImageSelect(this)">
+                <input type="text" id="chat-input" placeholder="Type message..." style="margin:0; border-radius:20px;">
+                <button onclick="sendMessage()" style="width: auto; margin:0; padding: 10px 15px; border-radius: 20px;"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+
+        <!-- Profile -->
+        <div id="profile-screen" class="screen hidden">
+            <h2>Profile</h2>
+            <input type="text" id="pf-name">
+            <input type="text" id="pf-email" readonly style="color:#777;">
+            <select id="pf-country"></select>
+            <input type="date" id="pf-dob">
+            <button onclick="updateProfile()">Save Changes</button>
+            <button onclick="logout()" style="background: var(--danger-color); margin-top:20px;">Logout</button>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="navTo('home-screen', this)"><i class="fas fa-home"></i></div>
+            <div class="nav-item" onclick="navTo('upload-screen', this)"><i class="fas fa-plus-square"></i></div>
+            <div class="nav-item" onclick="navTo('fav-screen', this)"><i class="fas fa-heart"></i></div>
+            <div class="nav-item" onclick="navTo('inbox-screen', this)"><i class="fas fa-comment-dots"></i></div>
+            <div class="nav-item" onclick="navTo('profile-screen', this)"><i class="fas fa-user"></i></div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        // CONFIGURATION (PLACE YOUR KEYS HERE)
+        const firebaseConfig = {
+  apiKey: "AIzaSyBpqoMPNOmNI-sYAKbMHG_zfeLWAn5qPlo",
+  authDomain: "xzamo-store.firebaseapp.com",
+  databaseURL: "https://xzamo-store-default-rtdb.firebaseio.com",
+  projectId: "xzamo-store",
+  storageBucket: "xzamo-store.firebasestorage.app",
+  messagingSenderId: "453510279293",
+  appId: "1:453510279293:web:70d4c548c00525f24e8114"
+};
+
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+        let currentUser = null;
+        let currentChatId = null;
+        let selectedChatImageBase64 = null;
+        const appLoadTime = Date.now(); 
+
+        const countries = ["Pakistan", "India", "USA", "UK", "Canada", "UAE", "Saudi Arabia", "Bangladesh", "Turkey", "Germany"];
+
+        window.onload = () => {
+            if ("Notification" in window) Notification.requestPermission();
+
+            const countrySelects = [document.getElementById('su-country'), document.getElementById('pf-country')];
+            countrySelects.forEach(s => {
+                s.innerHTML = '<option value="">Select Country</option>' + countries.map(c => `<option value="${c}">${c}</option>`).join('');
+            });
+
+            auth.onAuthStateChanged(user => {
+                const loader = document.getElementById('loading-screen');
+                if(user) {
+                    currentUser = user;
+                    loadHome();
+                    listenSystemNotifications(); 
+                    listenChatNotifications();
+                    document.getElementById('auth-screens').classList.add('hidden');
+                    document.getElementById('app-container').classList.remove('hidden');
+                } else {
+                    document.getElementById('auth-screens').classList.remove('hidden');
+                    document.getElementById('app-container').classList.add('hidden');
+                }
+                setTimeout(() => loader.classList.add('hidden'), 1000);
+            });
+        };
+
+        // --- NAVIGATION ---
+        function navTo(screen, el) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(screen).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            if(el) el.classList.add('active');
+            
+            if(screen === 'upload-screen') loadMyProducts();
+            if(screen === 'fav-screen') loadFavs();
+            if(screen === 'inbox-screen') loadInbox();
+            if(screen === 'profile-screen') loadProfile();
+        }
+        function goBack() { navTo('home-screen', document.querySelector('.nav-item.active')); }
+
+        // --- NOTIFICATIONS (SYSTEM TRAY) ---
+        function sendSystemNotification(title, body) {
+            if (Notification.permission === "granted") {
+                new Notification(title, {
+                    body: body,
+                    icon: 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png',
+                    vibrate: [200, 100, 200]
+                });
+            }
+        }
+
+        function listenSystemNotifications() {
+            db.ref('notifications').orderByChild('timestamp').startAt(appLoadTime).on('child_added', snap => {
+                const n = snap.val();
+                sendSystemNotification("XZamo Update", n.message);
+                addInAppNotif(n);
+            });
+            db.ref('notifications').limitToLast(5).on('child_added', snap => {
+                if (snap.val().timestamp < appLoadTime) addInAppNotif(snap.val(), snap.ref);
+            });
+        }
+
+        function addInAppNotif(n, ref) {
+            const now = Date.now();
+            if (now - n.timestamp > (2 * 60 * 60 * 1000)) {
+                if(ref) ref.remove(); 
+                return;
+            }
+            const list = document.getElementById('notif-list');
+            if (!list.innerHTML.includes(n.message)) {
+                document.getElementById('notif-badge').classList.remove('hidden');
+                const div = document.createElement('div');
+                div.style.padding = "8px"; div.style.borderBottom = "1px solid #444"; div.style.fontSize="0.9rem";
+                div.innerText = n.message;
+                list.prepend(div);
+            }
+        }
+
+        function listenChatNotifications() {
+            db.ref('chats').on('child_changed', snap => {
+                if (snap.key.includes(currentUser.uid)) {
+                    const msgs = Object.values(snap.val());
+                    const lastMsg = msgs[msgs.length - 1];
+                    if (lastMsg.sender !== currentUser.uid && lastMsg.timestamp > appLoadTime) {
+                        const senderId = lastMsg.sender;
+                        db.ref('users/' + senderId).once('value', u => {
+                            const name = u.val() ? u.val().name : "User";
+                            const txt = lastMsg.text || "Sent an image";
+                            sendSystemNotification("Message from " + name, txt);
+                        });
+                    }
+                }
+            });
+        }
+
+        // --- AUTH ---
+        function handleSignup() {
+            const email = document.getElementById('su-email').value;
+            const pass = document.getElementById('su-pass').value;
+            const name = document.getElementById('su-name').value;
+            const country = document.getElementById('su-country').value;
+            const dob = document.getElementById('su-dob').value;
+            if(!name || !country) return alert("All fields required");
+            auth.createUserWithEmailAndPassword(email, pass).then(cred => {
+                db.ref('users/' + cred.user.uid).set({ name, email, country, dob, uid: cred.user.uid });
+            }).catch(e => alert(e.message));
+        }
+        function handleLogin() { auth.signInWithEmailAndPassword(document.getElementById('li-email').value, document.getElementById('li-pass').value).catch(e => alert(e.message)); }
+        function showLogin() { document.getElementById('signup-screen').classList.add('hidden'); document.getElementById('login-screen').classList.remove('hidden'); }
+        function showSignup() { document.getElementById('login-screen').classList.add('hidden'); document.getElementById('signup-screen').classList.remove('hidden'); }
+        function logout() { auth.signOut(); location.reload(); }
+
+        // --- HOME & SLIDER ---
+        function loadHome() {
+            db.ref('banners').on('value', snap => {
+                const w = document.getElementById('banner-wrapper');
+                w.innerHTML = '';
+                let count = 0;
+                snap.forEach(c => {
+                    w.innerHTML += `<img src="${c.val().url}" class="banner-img">`;
+                    count++;
+                });
+                w.style.width = (count * 100) + "%"; 
+                document.querySelectorAll('.banner-img').forEach(img => img.style.width = (100 / count) + "%");
+                startSlide(count);
+            });
+
+            db.ref('products').on('value', snap => {
+                const list = document.getElementById('product-list');
+                list.innerHTML = '';
+                snap.forEach(c => {
+                    const p = c.val();
+                    list.innerHTML += `
+                  
